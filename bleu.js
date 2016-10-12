@@ -9,10 +9,11 @@ function mngrp(can, refm, n, smooth)
   if (n == 0)
     throw new Error("mngrp: n = 0")
 
-  var tokenizer = new natural.RegexpTokenizer({pattern: /[^a-zA-Z0-9\-\?]+/});
+  // var tokenizer = new natural.RegexpTokenizer({pattern: /[^a-zA-Z0-9\-\?]+/});
 
-  var can = natural.NGrams.ngrams(tokenizer.tokenize(canstr), n)
-  var refm = natural.NGrams.ngrams(tokenizer.tokenize(refmstr), n)
+
+  var can = natural.NGrams.ngrams(canstr.split(" "), n)
+  var refm = natural.NGrams.ngrams(refmstr.split(" "), n)
 
   var refh = {}
   _.each(refm, function(value, key, list){
