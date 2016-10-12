@@ -1,36 +1,18 @@
 var natural = require('natural');
 var _ = require('underscore')._;
 
-function distances(str1, str2)
+function mngrp(can, refm, n, smooth)
 {
-  str1 = str1.toLowerCase()
-  str2 = str2.toLowerCase()
-
-  var tokenizer = new natural.RegexpTokenizer({pattern: /[^a-zA-Z0-9\-\?]+/});
-
-  var tokens1 = _.flatten(natural.NGrams.ngrams(tokenizer.tokenize(str1), 1))
-  var tokens2 = _.flatten(natural.NGrams.ngrams(tokenizer.tokenize(str2), 1))
-
-  var dst = bleu(str1,str2)
-
-  // var dst_nrm = dst/_.max([tokens1.length, tokens2.length])
-  // return dst_nrm
-  
-  return dst
-}
-
-function mngrp(can, refm, n)
-{
-  can = can.toLowerCase()
-  refm = refm.toLowerCase()
+  canstr = can.toLowerCase()
+  refmstr = refm.toLowerCase()
 
   if (n == 0)
     throw new Error("mngrp: n = 0")
 
   var tokenizer = new natural.RegexpTokenizer({pattern: /[^a-zA-Z0-9\-\?]+/});
 
-  var can = natural.NGrams.ngrams(tokenizer.tokenize(can), n)
-  var refm = natural.NGrams.ngrams(tokenizer.tokenize(refm), n)
+  var can = natural.NGrams.ngrams(tokenizer.tokenize(canstr), n)
+  var refm = natural.NGrams.ngrams(tokenizer.tokenize(refmstr), n)
 
   var refh = {}
   _.each(refm, function(value, key, list){
@@ -42,7 +24,7 @@ function mngrp(can, refm, n)
 
   var m = 0
   _.each(can, function(ngr, key, list){
-    ngr = ngr
+    // ngr = ngr
     if (ngr in refh)
     {
       if (refh[ngr] > 0)
@@ -53,10 +35,37 @@ function mngrp(can, refm, n)
     }
   }, this)
 
-  if (n>1)
-    return  (m+1)/(can.length+1)
-  else
-    return  m/can.length
+  if (smooth == "lin")
+  {
+    if (n>1)
+      return  (m+1)/(can.length+1)
+    else
+      return  m/can.length
+  }
+
+  if (smooth == "def")
+  {
+    if (m == 0)
+      return  Number.EPSILON/can.length
+    else
+      return  m/can.length
+  }
+
+  if (smooth == "nist")
+  {
+    if (m == 0)
+      return 1/Math.pow(2,n)/can.length
+    else
+      return  m/can.length
+  }
+
+  if (smooth == "k-based")
+  {
+    if (m == 0)
+      return 1/Math.pow(5/(Math.log(refmstr.split(" ").length)),n)/can.length
+    else
+      return  m/can.length
+  }
 }
 
 function brevity(can, ref)
@@ -73,14 +82,13 @@ function brevity(can, ref)
   // console.log("BLEU: brevity: ref.length: "+ref.length)
   
   var ex = Math.exp(1-ref.length/can.length)
-  console.log("BLEU: brevity: ex: "+ex)
+  // console.log("BLEU: brevity: ex: "+ex)
 
   return _.min([1, ex])
 }
 
-function bleu(can, ref)
+function bleu(can, ref, maxg, smooth)
 {
-  var maxg = 3
   can = can.toLowerCase()
   ref = ref.toLowerCase()
 
@@ -90,24 +98,48 @@ function bleu(can, ref)
   var P = 1
 
   _(maxg).times(function(n){ 
-    var temp = mngrp(can, ref, n+1)
-    console.log("BLEU: P_"+(n+1)+": "+temp)
+    var temp = mngrp(can, ref, n+1, smooth)
+    // console.log("BLEU: P_"+(n+1)+": "+temp)
     P *= temp
   });
 
-  console.log("P="+P)
+  // console.log("P="+P)
   P = Math.pow(P,1/maxg)  
 
-  console.log("BLEU: exp P="+P)
+  // console.log("BLEU: exp P="+P)
 
   var brev = brevity(can, ref)
-  console.log("BLEU: brevity: "+brev)
+  // console.log("BLEU: brevity: "+brev)
 
-  return P*brev
+  if (_.isFinite(P*brev))
+    return P*brev
+  else
+    return 0
   // return P
 }
 
-var dst = bleu("show must go on", "show must go off")
-console.log(dst)
 
+module.exports = {
+  bleu:bleu
+}
+/*
+console.log(bleu("show must go on", "show must go off", 1, "lin"))
+console.log(bleu("show must go on", "show must go off", 2, "lin"))
+console.log(bleu("show must go on", "show must go off", 3, "lin"))
+console.log(bleu("show must go on", "show must go off", 4, "lin"))
 
+console.log(bleu("show must go on", "show must go off", 1, "def"))
+console.log(bleu("show must go on", "show must go off", 2, "def"))
+console.log(bleu("show must go on", "show must go off", 3, "def"))
+console.log(bleu("show must go on", "show must go off", 4, "def"))
+
+console.log(bleu("show must go on", "show must go off", 1, "nist"))
+console.log(bleu("show must go on", "show must go off", 2, "nist"))
+console.log(bleu("show must go on", "show must go off", 3, "nist"))
+console.log(bleu("show must go on", "show must go off", 4, "nist"))
+
+console.log(bleu("show must go on", "show must go off", 1, "k-based"))
+console.log(bleu("show must go on", "show must go off", 2, "k-based"))
+console.log(bleu("show must go on", "show must go off", 3, "k-based"))
+console.log(bleu("show must go on", "show must go off", 4, "k-based"))
+*/
