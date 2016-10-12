@@ -93,6 +93,9 @@ function bleu(can, ref, maxg, smooth)
   can = can.toLowerCase()
   ref = ref.toLowerCase()
 
+  can = can.replace(/[!@#$%^&*()<>.,?!+=~`'/":{}-]/g, " ").replace( /\s\s+/g,' ').trim()
+  ref = ref.replace(/[!@#$%^&*()<>.,?!+=~`'/":{}-]/g, " ").replace( /\s\s+/g,' ').trim()
+
   // console.log("BLEU: can: "+can)
   // console.log("BLEU: ref: "+ref)
 
