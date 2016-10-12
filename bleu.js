@@ -74,10 +74,8 @@ function brevity(can, ref)
   can = can.toLowerCase()
   ref = ref.toLowerCase()
 
-  var tokenizer = new natural.RegexpTokenizer({pattern: /[^a-zA-Z0-9\-\?]+/});
-
-  var can = natural.NGrams.ngrams(tokenizer.tokenize(can), 1)
-  var ref = natural.NGrams.ngrams(tokenizer.tokenize(ref), 1)
+  var can = natural.NGrams.ngrams(can.split(" "), 1)
+  var ref = natural.NGrams.ngrams(ref.split(" "), 1)
 
   // console.log("BLEU: brevity: can.length: "+can.length)
   // console.log("BLEU: brevity: ref.length: "+ref.length)
@@ -121,7 +119,6 @@ function bleu(can, ref, maxg, smooth)
     return 0
   // return P
 }
-
 
 module.exports = {
   bleu:bleu
